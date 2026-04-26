@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(curl -s -X POST http://localhost:3000/api/roast -H 'Content-Type: application/json' -d '{\"url\":\"https://www.leboncoin.fr\",\"lang\":\"fr\"}' --max-time 60)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(curl -s http://localhost:3000/api/roast -X POST -H \"Content-Type: application/json\" -d '{\"url\":\"https://www.leboncoin.fr\",\"lang\":\"fr\"}' --max-time 60)",
+      "Bash(curl -s http://localhost:3000/ --max-time 5 -o /dev/null -w \"%{http_code}\")",
+      "PowerShell(Stop-Process -Id 10004 -Force)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -X POST http://localhost:3000/api/roast -H 'Content-Type: application/json' -d '{\"url\":\"https://www.leboncoin.fr\",\"lang\":\"fr\"}' --max-time 15)",
+      "Bash(npm install *)",
+      "Bash(node -e \"require\\('stripe'\\); console.log\\('stripe ok'\\)\")",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npm run dev)"
+    ]
+  }
+}
