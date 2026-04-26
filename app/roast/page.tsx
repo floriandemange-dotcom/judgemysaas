@@ -66,7 +66,7 @@ interface Plan {
 const plans: Record<'fr' | 'en', Plan[]> = {
   fr: [
     {
-      id: 'essential',
+      id: 'essentiel',
       name: 'Essentiel',
       badge: 'Le plus populaire',
       badgeColor: '#FF4500',
@@ -82,22 +82,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       featured: true,
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: '49€',
-      priceNote: 'paiement unique',
-      features: [
-        'Tout Essentiel',
-        'Analyse de 5 pages de ton site',
-        'Comparaison avec 3 concurrents',
-        'Rapport PDF téléchargeable',
-        'Support par email 7 jours',
-      ],
-      button: 'Choisir Pro',
-      featured: false,
-    },
-    {
-      id: 'unlimited',
+      id: 'illimite',
       name: 'Illimité',
       badge: 'Meilleure valeur',
       badgeColor: '#22c55e',
@@ -116,7 +101,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
   ],
   en: [
     {
-      id: 'essential',
+      id: 'essentiel',
       name: 'Essential',
       badge: 'Most popular',
       badgeColor: '#FF4500',
@@ -132,22 +117,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       featured: true,
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: '€49',
-      priceNote: 'one-time payment',
-      features: [
-        'Everything in Essential',
-        'Analysis of 5 site pages',
-        'Comparison with 3 competitors',
-        'Downloadable PDF report',
-        '7-day email support',
-      ],
-      button: 'Choose Pro',
-      featured: false,
-    },
-    {
-      id: 'unlimited',
+      id: 'illimite',
       name: 'Unlimited',
       badge: 'Best value',
       badgeColor: '#22c55e',
@@ -398,7 +368,7 @@ export default function RoastPage() {
               {t.ctaQuestion(hiddenCount)}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
               {plans[result.lang ?? 'fr'].map((plan) => (
                 <div
                   key={plan.id}

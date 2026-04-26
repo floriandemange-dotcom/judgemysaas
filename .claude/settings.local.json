@@ -19,7 +19,10 @@
       "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npm run dev)",
       "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npm run build)",
       "Bash(npx rimraf *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.dependencies, null, 2\\)\\)\")",
+      "Bash(gh run *)",
+      "Bash(gh deployment *)"
     ]
   }
 }
