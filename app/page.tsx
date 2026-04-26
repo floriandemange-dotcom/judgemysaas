@@ -321,8 +321,11 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-900 py-5 text-center">
+      <footer className="border-t border-zinc-900 py-5 text-center flex flex-col items-center gap-2">
         <p className="text-zinc-600 text-xs">{t.footer}</p>
+        <a href="/mentions-legales" className="text-zinc-700 text-xs hover:text-zinc-500 transition-colors">
+          Mentions légales
+        </a>
       </footer>
     </div>
   )
