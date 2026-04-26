@@ -11,7 +11,15 @@
       "Bash(curl -s -X POST http://localhost:3000/api/roast -H 'Content-Type: application/json' -d '{\"url\":\"https://www.leboncoin.fr\",\"lang\":\"fr\"}' --max-time 15)",
       "Bash(npm install *)",
       "Bash(node -e \"require\\('stripe'\\); console.log\\('stripe ok'\\)\")",
-      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npm run dev)"
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=4096\" npm run dev)",
+      "Bash(git commit *)",
+      "Bash(git remote *)",
+      "Bash(git branch *)",
+      "Bash(git push *)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npm run dev)",
+      "Bash(NODE_OPTIONS=\"--max-old-space-size=8192\" npm run build)",
+      "Bash(npx rimraf *)",
+      "Bash(git add *)"
     ]
   }
 }
