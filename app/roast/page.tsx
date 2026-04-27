@@ -191,10 +191,12 @@ export default function RoastPage() {
       if (data.url) {
         window.location.href = data.url
       } else {
-        showToast('Erreur lors du paiement. Réessaie.')
+        console.error('[checkout] API error:', data.error ?? data)
+        showToast(data.error ?? 'Erreur lors du paiement. Réessaie.')
         setCheckoutLoading(null)
       }
-    } catch {
+    } catch (err) {
+      console.error('[checkout] fetch error:', err)
       showToast('Erreur lors du paiement. Réessaie.')
       setCheckoutLoading(null)
     }
