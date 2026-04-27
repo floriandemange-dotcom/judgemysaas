@@ -23,6 +23,7 @@ function resolveEnvVar(name: string): string {
 export async function POST(request: Request) {
   try {
     const stripeKey = resolveEnvVar('STRIPE_SECRET_KEY')
+    console.log('[checkout] STRIPE_SECRET_KEY present:', !!stripeKey, '| prefix:', stripeKey.slice(0, 7))
     if (!stripeKey) {
       console.error('[checkout] STRIPE_SECRET_KEY not configured')
       return Response.json({ error: 'STRIPE_SECRET_KEY not configured' }, { status: 500 })
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
 
     const body = await request.json()
     const { plan, roast_id } = body as { plan: string; roast_id?: string }
+    console.log('[checkout] received plan:', plan, '| roast_id:', roast_id)
 
     if (!plan || !(plan in planConfig)) {
       console.error('[checkout] Invalid plan:', plan)
@@ -37,13 +39,22 @@ export async function POST(request: Request) {
     }
 
     const validPlan = plan as Plan
-    const appUrl = resolveEnvVar('NEXT_PUBLIC_APP_URL') || 'http://localhost:3000'
+
+    // Derive base URL from request if env var not set (avoids localhost on Vercel)
+    const envAppUrl = resolveEnvVar('NEXT_PUBLIC_APP_URL')
+    const requestOrigin = new URL(request.url).origin
+    const appUrl = envAppUrl || requestOrigin
+    console.log('[checkout] appUrl:', appUrl, '| source:', envAppUrl ? 'env' : 'request origin')
+
     const config = planConfig[validPlan]
     const stripe = new Stripe(stripeKey)
 
     const successUrl = roast_id
       ? `${appUrl}/merci?roast_id=${roast_id}&plan=${validPlan}`
       : `${appUrl}/merci?plan=${validPlan}`
+    const cancelUrl = `${appUrl}/roast`
+    console.log('[checkout] success_url:', successUrl)
+    console.log('[checkout] cancel_url:', cancelUrl)
 
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: config.mode,
@@ -61,10 +72,11 @@ export async function POST(request: Request) {
         },
       ],
       success_url: successUrl,
-      cancel_url: `${appUrl}/roast`,
+      cancel_url: cancelUrl,
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams)
+    console.log('[checkout] session created:', session.id, '| url present:', !!session.url)
 
     if (!session.url) {
       console.error('[checkout] Stripe returned no URL for session:', session.id)
