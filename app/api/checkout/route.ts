@@ -40,13 +40,44 @@ export async function POST(request: Request) {
 
     const validPlan = plan as Plan
 
-    // Derive base URL: env var → forwarded headers (Vercel) → request URL
-    const envAppUrl = resolveEnvVar('NEXT_PUBLIC_APP_URL')
-    const fwdHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
-    const fwdProto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || 'https'
-    const derivedUrl = fwdHost ? `${fwdProto}://${fwdHost}` : new URL(request.url).origin
-    const appUrl = envAppUrl || derivedUrl
-    console.log('[checkout] appUrl:', appUrl, '| source:', envAppUrl ? 'env' : `headers(${fwdProto}://${fwdHost})`)
+    // Derive base URL with full fallback chain
+    function resolveAppUrl(): string {
+      const fromEnv = resolveEnvVar('NEXT_PUBLIC_APP_URL')
+      if (fromEnv) return fromEnv
+
+      const fwdHost = request.headers.get('x-forwarded-host') || ''
+      if (fwdHost) {
+        const proto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || 'https'
+        return `${proto}://${fwdHost}`
+      }
+
+      const host = request.headers.get('host') || ''
+      if (host) {
+        const proto = host.startsWith('localhost') ? 'http' : 'https'
+        return `${proto}://${host}`
+      }
+
+      try {
+        const origin = new URL(request.url).origin
+        if (origin && origin !== 'null') return origin
+      } catch { /* ignore */ }
+
+      return ''
+    }
+
+    const appUrl = resolveAppUrl()
+    console.log('[checkout] appUrl:', JSON.stringify(appUrl))
+    console.log('[checkout] headers x-forwarded-host:', request.headers.get('x-forwarded-host'))
+    console.log('[checkout] headers host:', request.headers.get('host'))
+    console.log('[checkout] request.url:', request.url)
+
+    if (!appUrl) {
+      console.error('[checkout] Cannot determine app URL — set NEXT_PUBLIC_APP_URL in Vercel env vars')
+      return Response.json(
+        { error: 'Configuration manquante : NEXT_PUBLIC_APP_URL non défini dans les variables d\'environnement Vercel.' },
+        { status: 500 }
+      )
+    }
 
     const config = planConfig[validPlan]
     const stripe = new Stripe(stripeKey)
