@@ -18,6 +18,7 @@ interface Issue {
 interface Positive {
   title: string
   description: string
+  exploit_steps?: string[]
 }
 
 interface ShareMessages {
@@ -38,7 +39,6 @@ interface RoastResult {
 }
 
 function computeScore(result: RoastResult): number {
-  // Use the score returned by Claude when available, fall back to issue-based computation
   if (typeof result.overall === 'number' && result.overall >= 0 && result.overall <= 100) {
     return result.overall
   }
@@ -74,8 +74,8 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       priceNote: 'paiement unique',
       features: [
         'Rapport complet (tous les problèmes)',
-        'Plan d\'action prioritaire',
-        'Ce qui marche bien',
+        "Plan d'action prioritaire",
+        'Points forts à exploiter',
         'Accès immédiat',
       ],
       button: 'Choisir Essentiel',
@@ -110,7 +110,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       features: [
         'Full report (all issues)',
         'Priority action plan',
-        'What works well',
+        'Strengths to leverage',
         'Instant access',
       ],
       button: 'Choose Essential',
@@ -140,26 +140,30 @@ const labels = {
   fr: {
     back: 'Analyser un autre site',
     scoreBanner: (score: number) => `Ton site a obtenu ${score}/100`,
-    sectionTitle: 'CE QUI FAIT FUIR TES VISITEURS',
+    criticalTitle: 'CE QUI FAIT FUIR TES VISITEURS',
+    positivesTitle: 'CE QUI MARCHE BIEN',
+    positiveExploitLocked: 'Découvrez comment transformer ce point fort en avantage concurrentiel',
+    minorTitle: 'CE QUE TU PEUX AMÉLIORER',
     howToFix: '✅ Comment réparer :',
-    ctaQuestion: (n: number) => `Tu veux voir les ${n} autres problèmes ?`,
-    pricingSub: 'Paiement sécurisé · Satisfait ou remboursé · Accès immédiat',
-    positifLocked: (n: number) => `🔒 ${n} point${n > 1 ? 's' : ''} positif${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''}`,
+    ctaQuestion: (n: number) => `Tu veux débloquer les ${n} autres problèmes ?`,
+    pricingSub: 'Paiement sécurisé · Satisfait ou remboursé 14 jours · Accès immédiat',
     shareTitle: 'Partager mon score',
     shareText: (score: number, total: number) =>
       `Mon site a eu ${score}/100 sur JudgeMyApp 😬\nL'IA a trouvé ${total} problèmes qui font fuir mes clients.\nTu veux savoir pour le tien ? → judgemyapp.fr`,
-    toastTiktok: 'Texte copié ! Colle-le dans ta bio ou ta vidéo TikTok 🎵',
-    toastInstagram: 'Texte copié ! Colle-le dans ta story ou ta bio Instagram 📸',
+    toastTiktok: 'Copié ! Colle-le dans ta bio ou ta vidéo TikTok 🎵',
+    toastInstagram: 'Copié ! Colle-le dans ta story ou ta bio Instagram 📸',
     footer: 'JudgeMyApp · France',
   },
   en: {
     back: 'Analyse another site',
     scoreBanner: (score: number) => `Your site scored ${score}/100`,
-    sectionTitle: 'WHAT DRIVES YOUR VISITORS AWAY',
+    criticalTitle: 'WHAT DRIVES YOUR VISITORS AWAY',
+    positivesTitle: 'WHAT WORKS WELL',
+    positiveExploitLocked: 'Discover how to turn this strength into a competitive advantage',
+    minorTitle: 'WHAT YOU CAN IMPROVE',
     howToFix: '✅ How to fix it:',
-    ctaQuestion: (n: number) => `Want to see the ${n} other issues?`,
-    pricingSub: 'Secure payment · Money-back guarantee · Instant access',
-    positifLocked: (n: number) => `🔒 ${n} positive${n > 1 ? 's' : ''} identified`,
+    ctaQuestion: (n: number) => `Want to unlock the ${n} other issues?`,
+    pricingSub: 'Secure payment · 14-day money-back guarantee · Instant access',
     shareTitle: 'Share my score',
     shareText: (score: number, total: number) =>
       `My site scored ${score}/100 on JudgeMyApp 😬\nAI found ${total} issues driving my customers away.\nWant to know about yours? → judgemyapp.fr`,
@@ -205,7 +209,6 @@ export default function RoastPage() {
     try {
       await navigator.clipboard.writeText(text)
     } catch {
-      // fallback for older browsers
       const el = document.createElement('textarea')
       el.value = text
       document.body.appendChild(el)
@@ -232,12 +235,17 @@ export default function RoastPage() {
     )
   }
 
-  const t = labels[result.lang ?? 'fr']
+  const lang = result.lang ?? 'fr'
+  const t = labels[lang]
   const score = computeScore(result)
-  const allIssues = result.issues
-  const firstIssue = allIssues[0] ?? null
-  const lockedIssues = allIssues.slice(1)
-  const hiddenCount = lockedIssues.length
+
+  const criticalMajorIssues = result.issues.filter(
+    (i) => i.severity === 'critical' || i.severity === 'major'
+  )
+  const minorIssues = result.issues.filter((i) => i.severity === 'minor')
+  const firstIssue = criticalMajorIssues[0] ?? null
+  const lockedCriticalMajor = criticalMajorIssues.slice(1)
+  const totalLockedCount = lockedCriticalMajor.length + minorIssues.length
 
   const scoreBg =
     score < 40 ? 'rgba(239,68,68,0.15)' : score < 70 ? 'rgba(249,115,22,0.15)' : 'rgba(34,197,94,0.15)'
@@ -247,8 +255,13 @@ export default function RoastPage() {
     score < 40 ? '#f87171' : score < 70 ? '#fb923c' : '#4ade80'
 
   const sm = result.share_messages
-  const fallbackText = t.shareText(score, allIssues.length)
-  const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(sm?.twitter ?? fallbackText)}`
+  const fallbackText = t.shareText(score, result.issues.length)
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(sm?.twitter ?? fallbackText)}`
+  const redditUrl = `https://reddit.com/submit?title=${encodeURIComponent(
+    lang === 'fr'
+      ? `Mon site a eu ${score}/100 sur JudgeMyApp`
+      : `My site scored ${score}/100 on JudgeMyApp`
+  )}&text=${encodeURIComponent(sm?.reddit ?? fallbackText)}`
 
   const issueBorderColor = (severity: Issue['severity']) =>
     severity === 'critical' ? '#ef4444' : severity === 'major' ? '#f97316' : '#eab308'
@@ -288,11 +301,11 @@ export default function RoastPage() {
           "{result.summary}"
         </blockquote>
 
-        {/* Issues section */}
-        {allIssues.length > 0 && (
+        {/* 🔴 Critical / Major Issues */}
+        {criticalMajorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
             <h2 className="text-xs font-bold tracking-widest text-red-400 mb-4">
-              🔴 {t.sectionTitle}
+              🔴 {t.criticalTitle}
             </h2>
             <div className="flex flex-col gap-3">
 
@@ -310,7 +323,6 @@ export default function RoastPage() {
                     </p>
                   </div>
 
-                  {/* Social proof */}
                   {firstIssue.social_proof && (
                     <div className="border-l-2 border-zinc-700 pl-3">
                       <p className="text-zinc-500 text-xs italic leading-relaxed">
@@ -322,7 +334,6 @@ export default function RoastPage() {
                     </div>
                   )}
 
-                  {/* Steps */}
                   {firstIssue.steps && firstIssue.steps.length > 0 && (
                     <div className="flex flex-col gap-2">
                       {firstIssue.steps.map((step, i) => (
@@ -341,8 +352,8 @@ export default function RoastPage() {
                 </div>
               )}
 
-              {/* Locked issues — blurred titles */}
-              {lockedIssues.map((issue, i) => (
+              {/* Locked critical/major issues */}
+              {lockedCriticalMajor.map((issue, i) => (
                 <div
                   key={i}
                   className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
@@ -361,91 +372,142 @@ export default function RoastPage() {
           </section>
         )}
 
-        {/* Pricing block */}
-        {hiddenCount > 0 && (
-          <div className="w-full max-w-4xl flex flex-col gap-6">
-            <p className="text-white font-bold text-lg text-center">
-              {t.ctaQuestion(hiddenCount)}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto w-full">
-              {plans[result.lang ?? 'fr'].map((plan) => (
+        {/* 🟢 Positives */}
+        {result.positives.length > 0 && (
+          <section className="w-full max-w-2xl">
+            <h2 className="text-xs font-bold tracking-widest text-green-400 mb-4">
+              🟢 {t.positivesTitle}
+            </h2>
+            <div className="flex flex-col gap-3">
+              {result.positives.map((positive, i) => (
                 <div
-                  key={plan.id}
-                  className="rounded-2xl flex flex-col gap-5 px-5 py-6 relative"
-                  style={{
-                    background: '#111',
-                    border: plan.featured ? '1px solid rgba(255,69,0,0.6)' : '1px solid rgba(255,255,255,0.07)',
-                    transform: plan.featured ? 'scale(1.02)' : 'none',
-                  }}
+                  key={i}
+                  className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-3"
+                  style={{ borderLeft: '3px solid #22c55e' }}
                 >
-                  {/* Badge */}
-                  {plan.badge && (
-                    <span
-                      className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
-                      style={{ background: plan.badgeColor }}
-                    >
-                      {plan.badge}
-                    </span>
-                  )}
-
-                  {/* Name + price */}
+                  {/* Visible: title + description */}
                   <div>
-                    <p className="font-bold text-white text-base mb-2">{plan.name}</p>
-                    <p className="text-2xl font-bold text-white">{plan.price}</p>
-                    <p className="text-zinc-500 text-xs mt-0.5">{plan.priceNote}</p>
+                    <p className="font-semibold text-sm text-white mb-1">✅ {positive.title}</p>
+                    <p className="text-zinc-400 text-sm leading-relaxed">{positive.description}</p>
                   </div>
 
-                  {/* Features */}
-                  <ul className="flex flex-col gap-2 flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
-                        <span className="text-green-400 flex-shrink-0 mt-px">✅</span>
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Button */}
-                  <button
-                    onClick={() => handleCheckout(plan.id)}
-                    disabled={checkoutLoading !== null}
-                    className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={
-                      plan.featured
-                        ? { background: '#FF4500', color: '#fff' }
-                        : { background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }
-                    }
+                  {/* Locked: how to exploit this strength */}
+                  <div
+                    className="rounded-lg px-4 py-3 flex items-start gap-3 select-none"
+                    style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}
                   >
-                    {checkoutLoading === plan.id ? '...' : plan.button}
-                  </button>
+                    <span className="text-sm flex-shrink-0 mt-0.5">🔒</span>
+                    <p
+                      className="text-green-400 text-xs leading-relaxed"
+                      style={{ filter: 'blur(4px)', userSelect: 'none' }}
+                    >
+                      {t.positiveExploitLocked}
+                    </p>
+                  </div>
                 </div>
               ))}
             </div>
-
-            <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
-          </div>
+          </section>
         )}
 
-        {/* Positives — locked */}
-        {result.positives.length > 0 && (
-          <div
-            className="w-full max-w-2xl rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-            style={{ borderLeft: '3px solid #22c55e' }}
-          >
-            <span className="text-zinc-500 text-sm font-medium">
-              {t.positifLocked(result.positives.length)}
-            </span>
+        {/* Pricing block */}
+        <div className="w-full max-w-2xl flex flex-col gap-6">
+          {totalLockedCount > 0 && (
+            <p className="text-white font-bold text-lg text-center">
+              {t.ctaQuestion(totalLockedCount)}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {plans[lang].map((plan) => (
+              <div
+                key={plan.id}
+                className="rounded-2xl flex flex-col gap-5 px-5 py-6 relative"
+                style={{
+                  background: '#111',
+                  border: plan.featured
+                    ? '1px solid rgba(255,69,0,0.6)'
+                    : '1px solid rgba(255,255,255,0.07)',
+                  transform: plan.featured ? 'scale(1.02)' : 'none',
+                }}
+              >
+                {plan.badge && (
+                  <span
+                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
+                    style={{ background: plan.badgeColor }}
+                  >
+                    {plan.badge}
+                  </span>
+                )}
+
+                <div>
+                  <p className="font-bold text-white text-base mb-2">{plan.name}</p>
+                  <p className="text-2xl font-bold text-white">{plan.price}</p>
+                  <p className="text-zinc-500 text-xs mt-0.5">{plan.priceNote}</p>
+                </div>
+
+                <ul className="flex flex-col gap-2 flex-1">
+                  {plan.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
+                      <span className="text-green-400 flex-shrink-0 mt-px">✅</span>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+
+                <button
+                  onClick={() => handleCheckout(plan.id)}
+                  disabled={checkoutLoading !== null}
+                  className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={
+                    plan.featured
+                      ? { background: '#FF4500', color: '#fff' }
+                      : { background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }
+                  }
+                >
+                  {checkoutLoading === plan.id ? '...' : plan.button}
+                </button>
+              </div>
+            ))}
           </div>
+
+          <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
+        </div>
+
+        {/* 🟡 Minor Issues */}
+        {minorIssues.length > 0 && (
+          <section className="w-full max-w-2xl">
+            <h2 className="text-xs font-bold tracking-widest text-yellow-400 mb-4">
+              🟡 {t.minorTitle}
+            </h2>
+            <div className="flex flex-col gap-3">
+              {minorIssues.map((issue, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+                  style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
+                >
+                  <span className="text-base flex-shrink-0">🔒</span>
+                  <p
+                    className="font-semibold text-sm text-white"
+                    style={{ filter: 'blur(4px)', userSelect: 'none' }}
+                  >
+                    {issue.title}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Share */}
         <div className="w-full max-w-2xl flex flex-col gap-3 pt-2">
           <p className="text-xs font-bold tracking-widest text-zinc-500 text-center">{t.shareTitle}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {/* X (Twitter) */}
+
+            {/* X (Twitter) — opens new tab */}
             <a
-              href={shareUrl}
+              href={twitterUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"
@@ -457,7 +519,7 @@ export default function RoastPage() {
               X
             </a>
 
-            {/* TikTok */}
+            {/* TikTok — copies to clipboard */}
             <button
               onClick={() => copyToClipboard(sm?.tiktok ?? fallbackText, t.toastTiktok)}
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"
@@ -469,11 +531,14 @@ export default function RoastPage() {
               TikTok
             </button>
 
-            {/* Instagram */}
+            {/* Instagram — copies to clipboard */}
             <button
               onClick={() => copyToClipboard(sm?.instagram ?? fallbackText, t.toastInstagram)}
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"
-              style={{ background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)', color: '#fff' }}
+              style={{
+                background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                color: '#fff',
+              }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" />
@@ -481,9 +546,9 @@ export default function RoastPage() {
               Instagram
             </button>
 
-            {/* Reddit */}
+            {/* Reddit — opens new tab */}
             <a
-              href={`https://reddit.com/submit?title=${encodeURIComponent(result.lang === 'fr' ? `Mon site a eu ${score}/100 sur JudgeMyApp` : `My site scored ${score}/100 on JudgeMyApp`)}&text=${encodeURIComponent(sm?.reddit ?? fallbackText)}`}
+              href={redditUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"

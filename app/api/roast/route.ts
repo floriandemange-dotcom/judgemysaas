@@ -20,6 +20,15 @@ interface EnrichedIssue extends RawIssue {
   }
 }
 
+interface RawPositive {
+  title: string
+  description: string
+}
+
+interface EnrichedPositive extends RawPositive {
+  exploit_steps?: string[]
+}
+
 interface ShareMessages {
   twitter: string
   tiktok: string
@@ -126,6 +135,31 @@ Reply ONLY in valid JSON without markdown:
 }`
 }
 
+function positiveEnrichmentPrompt(positiveTitle: string, lang: 'fr' | 'en'): string {
+  if (lang === 'fr') {
+    return `Tu es un expert en growth marketing et optimisation de conversion.
+
+Point fort identifié sur ce site : "${positiveTitle}"
+
+Génère 3 actions concrètes et directement applicables pour exploiter ce point fort et convertir davantage de visiteurs. Utilise des verbes d'action, sois précis, max 12 mots par étape.
+
+Réponds UNIQUEMENT en JSON valide sans markdown :
+{
+  "steps": ["action concrète 1", "action concrète 2", "action concrète 3"]
+}`
+  }
+  return `You are a growth marketing and conversion optimization expert.
+
+Strength identified on this site: "${positiveTitle}"
+
+Generate 3 concrete, immediately actionable steps to leverage this strength and convert more visitors. Use action verbs, be specific, max 12 words per step.
+
+Reply ONLY in valid JSON without markdown:
+{
+  "steps": ["concrete action 1", "concrete action 2", "concrete action 3"]
+}`
+}
+
 function sharePrompt(
   url: string,
   score: number,
@@ -216,6 +250,30 @@ async function enrichIssue(
   }
 }
 
+async function enrichPositive(
+  client: Anthropic,
+  positive: RawPositive,
+  lang: 'fr' | 'en'
+): Promise<EnrichedPositive> {
+  try {
+    const message = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 512,
+      messages: [{ role: 'user', content: positiveEnrichmentPrompt(positive.title, lang) }],
+    })
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+    const match = text.match(/\{[\s\S]*\}/)
+    if (!match) return positive
+    const enriched = JSON.parse(match[0])
+    return {
+      ...positive,
+      exploit_steps: Array.isArray(enriched.steps) ? enriched.steps : undefined,
+    }
+  } catch {
+    return positive
+  }
+}
+
 async function generateShareMessages(
   client: Anthropic,
   url: string,
@@ -277,7 +335,7 @@ export async function POST(request: Request) {
       overall: number
       summary: string
       issues: RawIssue[]
-      positives: { title: string; description: string }[]
+      positives: RawPositive[]
     }
 
     const score = typeof rawResult.overall === 'number' ? rawResult.overall : 50
@@ -286,8 +344,8 @@ export async function POST(request: Request) {
     )
     const mainIssueTitle = firstCritical?.title ?? rawResult.issues[0]?.title ?? ''
 
-    // Steps 2 & 3 — enrich issues + generate share messages in parallel
-    const [enrichedIssues, shareMessages] = await Promise.all([
+    // Steps 2 & 3 — enrich issues + positives + share messages in parallel
+    const [enrichedIssues, enrichedPositives, shareMessages] = await Promise.all([
       Promise.all(
         rawResult.issues.map((issue) =>
           issue.severity === 'critical' || issue.severity === 'major'
@@ -295,6 +353,7 @@ export async function POST(request: Request) {
             : Promise.resolve(issue as EnrichedIssue)
         )
       ),
+      Promise.all(rawResult.positives.map((pos) => enrichPositive(client, pos, validLang))),
       generateShareMessages(client, url, score, mainIssueTitle, rawResult.summary, validLang),
     ])
 
@@ -302,7 +361,7 @@ export async function POST(request: Request) {
       overall: rawResult.overall,
       summary: rawResult.summary,
       issues: enrichedIssues,
-      positives: rawResult.positives,
+      positives: enrichedPositives,
       share_messages: shareMessages,
     }
 
