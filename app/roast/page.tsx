@@ -73,12 +73,12 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       price: '19€',
       priceNote: 'paiement unique',
       features: [
-        'Rapport complet (tous les problèmes)',
+        'Tous les problèmes détaillés',
         "Plan d'action prioritaire",
-        'Points forts à exploiter',
+        'Comment exploiter tes points forts',
         'Accès immédiat',
       ],
-      button: 'Choisir Essentiel',
+      button: 'Débloquer le rapport →',
       featured: true,
     },
     {
@@ -95,7 +95,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
         'Historique de tous tes rapports',
         'Support prioritaire',
       ],
-      button: 'Choisir Illimité',
+      button: 'Choisir Illimité →',
       featured: false,
     },
   ],
@@ -108,12 +108,12 @@ const plans: Record<'fr' | 'en', Plan[]> = {
       price: '€19',
       priceNote: 'one-time payment',
       features: [
-        'Full report (all issues)',
+        'All issues in detail',
         'Priority action plan',
-        'Strengths to leverage',
+        'How to leverage your strengths',
         'Instant access',
       ],
-      button: 'Choose Essential',
+      button: 'Unlock the report →',
       featured: true,
     },
     {
@@ -130,7 +130,7 @@ const plans: Record<'fr' | 'en', Plan[]> = {
         'Full history of all reports',
         'Priority support',
       ],
-      button: 'Choose Unlimited',
+      button: 'Choose Unlimited →',
       featured: false,
     },
   ],
@@ -141,12 +141,14 @@ const labels = {
     back: 'Analyser un autre site',
     scoreBanner: (score: number) => `Ton site a obtenu ${score}/100`,
     criticalTitle: 'CE QUI FAIT FUIR TES VISITEURS',
-    positivesTitle: 'CE QUI MARCHE BIEN',
-    positiveExploitLocked: 'Comment exploiter ce point pour convertir plus → débloquez le rapport',
     minorTitle: 'CE QUE TU PEUX AMÉLIORER',
+    positivesTitle: 'CE QUI MARCHE BIEN',
+    positivesLocked: (n: number) =>
+      `🔒 ${n} point${n > 1 ? 's' : ''} fort${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''} — Découvrez comment les exploiter pour convertir plus`,
     howToFix: '✅ Comment réparer :',
-    ctaQuestion: (n: number) => `Tu veux débloquer les ${n} autres problèmes ?`,
-    pricingSub: 'Paiement sécurisé · Satisfait ou remboursé 14 jours · Accès immédiat',
+    ctaTitle: 'Débloquez votre rapport complet',
+    ctaSub: 'Tous vos problèmes · Conseils d\'exploitation de vos points forts · Accès immédiat',
+    pricingSub: 'Paiement sécurisé · Satisfait ou remboursé 14 jours',
     shareTitle: 'Partager mon score',
     shareText: (score: number, total: number) =>
       `Mon site a eu ${score}/100 sur JudgeMyApp 😬\nL'IA a trouvé ${total} problèmes qui font fuir mes clients.\nTu veux savoir pour le tien ? → judgemyapp.fr`,
@@ -158,12 +160,14 @@ const labels = {
     back: 'Analyse another site',
     scoreBanner: (score: number) => `Your site scored ${score}/100`,
     criticalTitle: 'WHAT DRIVES YOUR VISITORS AWAY',
-    positivesTitle: 'WHAT WORKS WELL',
-    positiveExploitLocked: 'How to leverage this strength to convert more → unlock the report',
     minorTitle: 'WHAT YOU CAN IMPROVE',
+    positivesTitle: 'WHAT WORKS WELL',
+    positivesLocked: (n: number) =>
+      `🔒 ${n} strength${n > 1 ? 's' : ''} identified — Discover how to leverage them to convert more`,
     howToFix: '✅ How to fix it:',
-    ctaQuestion: (n: number) => `Want to unlock the ${n} other issues?`,
-    pricingSub: 'Secure payment · 14-day money-back guarantee · Instant access',
+    ctaTitle: 'Unlock your full report',
+    ctaSub: 'All your issues · How to leverage your strengths · Instant access',
+    pricingSub: 'Secure payment · 14-day money-back guarantee',
     shareTitle: 'Share my score',
     shareText: (score: number, total: number) =>
       `My site scored ${score}/100 on JudgeMyApp 😬\nAI found ${total} issues driving my customers away.\nWant to know about yours? → judgemyapp.fr`,
@@ -247,7 +251,6 @@ export default function RoastPage() {
   const minorIssues = result.issues.filter((i) => i.severity === 'minor')
   const firstIssue = criticalMajorIssues[0] ?? null
   const lockedCriticalMajor = criticalMajorIssues.slice(1)
-  const totalLockedCount = lockedCriticalMajor.length + minorIssues.length
 
   const scoreBg =
     score < 40 ? 'rgba(239,68,68,0.15)' : score < 70 ? 'rgba(249,115,22,0.15)' : 'rgba(34,197,94,0.15)'
@@ -285,7 +288,7 @@ export default function RoastPage() {
         </button>
       </header>
 
-      {/* Score banner */}
+      {/* 1. Score banner */}
       <div
         style={{ background: scoreBg, borderBottom: `1px solid ${scoreBorder}` }}
         className="px-6 py-5 text-center"
@@ -298,12 +301,12 @@ export default function RoastPage() {
 
       <main className="flex-1 w-full px-4 py-10 flex flex-col gap-10 items-center">
 
-        {/* Summary */}
+        {/* 2. Summary */}
         <blockquote className="w-full max-w-2xl text-xl sm:text-2xl text-zinc-200 italic leading-relaxed border-l-2 border-zinc-700 pl-5">
           "{result.summary}"
         </blockquote>
 
-        {/* 🔴 Critical / Major Issues */}
+        {/* 3. 🔴 Critical / Major Issues */}
         {criticalMajorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
             <h2 className="text-xs font-bold tracking-widest text-red-400 mb-4">
@@ -374,51 +377,50 @@ export default function RoastPage() {
           </section>
         )}
 
-        {/* 🟢 Positives */}
-        {result.positives.length > 0 && (
+        {/* 4. 🟡 Minor Issues — all blurred */}
+        {minorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
-            <h2 className="text-xs font-bold tracking-widest text-green-400 mb-4">
-              🟢 {t.positivesTitle}
+            <h2 className="text-xs font-bold tracking-widest text-yellow-400 mb-4">
+              🟡 {t.minorTitle}
             </h2>
             <div className="flex flex-col gap-3">
-              {result.positives.map((positive, i) => (
+              {minorIssues.map((issue, i) => (
                 <div
                   key={i}
-                  className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-3"
-                  style={{ borderLeft: '3px solid #22c55e' }}
+                  className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+                  style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
                 >
-                  {/* Visible: title + description */}
-                  <div>
-                    <p className="font-semibold text-sm text-white mb-1">✅ {positive.title}</p>
-                    <p className="text-zinc-400 text-sm leading-relaxed">{positive.description}</p>
-                  </div>
-
-                  {/* Locked: how to exploit this strength */}
-                  <div
-                    className="rounded-lg px-4 py-3 flex items-start gap-3 select-none"
-                    style={{ background: 'rgba(34,197,94,0.05)', border: '1px solid rgba(34,197,94,0.12)' }}
+                  <span className="text-base flex-shrink-0">🔒</span>
+                  <p
+                    className="font-semibold text-sm text-white"
+                    style={{ filter: 'blur(4px)', userSelect: 'none' }}
                   >
-                    <span className="text-sm flex-shrink-0 mt-0.5">🔒</span>
-                    <p
-                      className="text-green-400 text-xs leading-relaxed"
-                      style={{ filter: 'blur(4px)', userSelect: 'none' }}
-                    >
-                      {t.positiveExploitLocked}
-                    </p>
-                  </div>
+                    {issue.title}
+                  </p>
                 </div>
               ))}
             </div>
           </section>
         )}
 
-        {/* Pricing block */}
-        <div className="w-full max-w-2xl flex flex-col gap-6">
-          {totalLockedCount > 0 && (
-            <p className="text-white font-bold text-lg text-center">
-              {t.ctaQuestion(totalLockedCount)}
+        {/* 5. 🟢 Positives — completely hidden, just count + teaser */}
+        {result.positives.length > 0 && (
+          <div
+            className="w-full max-w-2xl rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+            style={{ borderLeft: '3px solid #22c55e' }}
+          >
+            <p className="text-zinc-400 text-sm leading-snug">
+              {t.positivesLocked(result.positives.length)}
             </p>
-          )}
+          </div>
+        )}
+
+        {/* 6. Pricing block */}
+        <div className="w-full max-w-2xl flex flex-col gap-6">
+          <div className="text-center">
+            <p className="text-white font-bold text-xl mb-1">{t.ctaTitle}</p>
+            <p className="text-zinc-500 text-sm">{t.ctaSub}</p>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {plans[lang].map((plan) => (
@@ -475,32 +477,6 @@ export default function RoastPage() {
 
           <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
         </div>
-
-        {/* 🟡 Minor Issues */}
-        {minorIssues.length > 0 && (
-          <section className="w-full max-w-2xl">
-            <h2 className="text-xs font-bold tracking-widest text-yellow-400 mb-4">
-              🟡 {t.minorTitle}
-            </h2>
-            <div className="flex flex-col gap-3">
-              {minorIssues.map((issue, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-                  style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
-                >
-                  <span className="text-base flex-shrink-0">🔒</span>
-                  <p
-                    className="font-semibold text-sm text-white"
-                    style={{ filter: 'blur(4px)', userSelect: 'none' }}
-                  >
-                    {issue.title}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* Share */}
         <div className="w-full max-w-2xl flex flex-col gap-3 pt-2">
