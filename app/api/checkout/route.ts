@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const { plan } = body as { plan: string }
+    const { plan, roast_id } = body as { plan: string; roast_id?: string }
 
     if (!plan || !(plan in planConfig)) {
       console.error('[checkout] Invalid plan:', plan)
@@ -41,9 +41,13 @@ export async function POST(request: Request) {
     const config = planConfig[validPlan]
     const stripe = new Stripe(stripeKey)
 
+    const successUrl = roast_id
+      ? `${appUrl}/merci?roast_id=${roast_id}&plan=${validPlan}`
+      : `${appUrl}/merci?plan=${validPlan}`
+
     const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode: config.mode,
-      metadata: { plan: validPlan },
+      metadata: { plan: validPlan, ...(roast_id ? { roast_id } : {}) },
       line_items: [
         {
           price_data: {
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      success_url: `${appUrl}/merci?plan=${validPlan}`,
+      success_url: successUrl,
       cancel_url: `${appUrl}/roast`,
     }
 

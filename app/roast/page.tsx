@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface Issue {
   severity: 'critical' | 'major' | 'minor'
@@ -29,6 +29,7 @@ interface ShareMessages {
 }
 
 interface RoastResult {
+  id?: string
   url: string
   lang: 'fr' | 'en'
   overall?: number
@@ -146,8 +147,9 @@ const labels = {
     positivesLocked: (n: number) =>
       `🔒 ${n} point${n > 1 ? 's' : ''} fort${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''} — Découvrez comment les exploiter pour convertir plus`,
     howToFix: '✅ Comment réparer :',
+    exploitTitle: '🚀 Comment en profiter :',
     ctaTitle: 'Débloquez votre rapport complet',
-    ctaSub: 'Tous vos problèmes · Conseils d\'exploitation de vos points forts · Accès immédiat',
+    ctaSub: "Tous vos problèmes · Conseils d'exploitation de vos points forts · Accès immédiat",
     pricingSub: 'Paiement sécurisé · Satisfait ou remboursé 14 jours',
     shareTitle: 'Partager mon score',
     shareText: (score: number, total: number) =>
@@ -165,6 +167,7 @@ const labels = {
     positivesLocked: (n: number) =>
       `🔒 ${n} strength${n > 1 ? 's' : ''} identified — Discover how to leverage them to convert more`,
     howToFix: '✅ How to fix it:',
+    exploitTitle: '🚀 How to leverage it:',
     ctaTitle: 'Unlock your full report',
     ctaSub: 'All your issues · How to leverage your strengths · Instant access',
     pricingSub: 'Secure payment · 14-day money-back guarantee',
@@ -177,19 +180,130 @@ const labels = {
   },
 }
 
-export default function RoastPage() {
+function IssueCard({
+  issue,
+  t,
+}: {
+  issue: Issue
+  t: typeof labels['fr']
+}) {
+  const borderColor =
+    issue.severity === 'critical' ? '#ef4444' : issue.severity === 'major' ? '#f97316' : '#eab308'
+
+  return (
+    <div
+      className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-4"
+      style={{ borderLeft: `3px solid ${borderColor}` }}
+    >
+      <div>
+        <p className="font-semibold text-sm text-white mb-1">❌ {issue.title}</p>
+        <p className="text-zinc-400 text-sm leading-relaxed">{issue.description}</p>
+        <p className="text-sm mt-2 text-green-400">
+          {t.howToFix} <span className="text-zinc-300">{issue.fix}</span>
+        </p>
+      </div>
+
+      {issue.social_proof && (
+        <div className="border-l-2 border-zinc-700 pl-3">
+          <p className="text-zinc-500 text-xs italic leading-relaxed">
+            "{issue.social_proof.quote}"
+          </p>
+          <p className="text-zinc-600 text-xs mt-1">— Vu sur {issue.social_proof.source}</p>
+        </div>
+      )}
+
+      {issue.steps && issue.steps.length > 0 && (
+        <div className="flex flex-col gap-2">
+          {issue.steps.map((step, i) => (
+            <div key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+              <span
+                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: 'rgba(255,69,0,0.15)', color: '#FF4500' }}
+              >
+                {i + 1}
+              </span>
+              <span className="mt-px">{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PositiveCard({
+  positive,
+  t,
+}: {
+  positive: Positive
+  t: typeof labels['fr']
+}) {
+  return (
+    <div
+      className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-4"
+      style={{ borderLeft: '3px solid #22c55e' }}
+    >
+      <div>
+        <p className="font-semibold text-sm text-white mb-1">✅ {positive.title}</p>
+        <p className="text-zinc-400 text-sm leading-relaxed">{positive.description}</p>
+      </div>
+
+      {positive.exploit_steps && positive.exploit_steps.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs font-semibold text-green-400">{t.exploitTitle}</p>
+          {positive.exploit_steps.map((step, i) => (
+            <div key={i} className="flex items-start gap-3 text-sm text-zinc-300">
+              <span
+                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
+              >
+                {i + 1}
+              </span>
+              <span className="mt-px">{step}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RoastContent() {
   const [result, setResult] = useState<RoastResult | null>(null)
+  const [isPaid, setIsPaid] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const idFromUrl = searchParams.get('id')
 
-  async function handleCheckout(plan: string) {
-    setCheckoutLoading(plan)
+  useEffect(() => {
+    const raw = localStorage.getItem('roast_result')
+    if (!raw) return
+    try {
+      const parsed: RoastResult = JSON.parse(raw)
+      setResult(parsed)
+
+      const roastId = idFromUrl ?? parsed.id
+      if (roastId) {
+        try {
+          const payData = localStorage.getItem(`paid_${roastId}`)
+          if (payData) {
+            const pd = JSON.parse(payData)
+            if (pd.paid === true) setIsPaid(true)
+          }
+        } catch { /* ignore */ }
+      }
+    } catch { /* ignore */ }
+  }, [idFromUrl])
+
+  async function handleCheckout(planId: string) {
+    setCheckoutLoading(planId)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan: planId, roast_id: result?.id ?? '' }),
       })
       const data = await res.json()
       if (data.url) {
@@ -225,14 +339,6 @@ export default function RoastPage() {
     showToast(toastMsg)
   }
 
-  useEffect(() => {
-    const raw = localStorage.getItem('roast_result')
-    if (!raw) return
-    try {
-      setResult(JSON.parse(raw))
-    } catch { /* ignore */ }
-  }, [])
-
   if (!result) {
     return (
       <div style={{ background: '#0A0A0A' }} className="min-h-screen text-white flex items-center justify-center">
@@ -249,8 +355,6 @@ export default function RoastPage() {
     (i) => i.severity === 'critical' || i.severity === 'major'
   )
   const minorIssues = result.issues.filter((i) => i.severity === 'minor')
-  const firstIssue = criticalMajorIssues[0] ?? null
-  const lockedCriticalMajor = criticalMajorIssues.slice(1)
 
   const scoreBg =
     score < 40 ? 'rgba(239,68,68,0.15)' : score < 70 ? 'rgba(249,115,22,0.15)' : 'rgba(34,197,94,0.15)'
@@ -313,177 +417,165 @@ export default function RoastPage() {
               🔴 {t.criticalTitle}
             </h2>
             <div className="flex flex-col gap-3">
-
-              {/* First issue — fully visible */}
-              {firstIssue && (
-                <div
-                  className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-4"
-                  style={{ borderLeft: `3px solid ${issueBorderColor(firstIssue.severity)}` }}
-                >
-                  <div>
-                    <p className="font-semibold text-sm text-white mb-1">❌ {firstIssue.title}</p>
-                    <p className="text-zinc-400 text-sm leading-relaxed">{firstIssue.description}</p>
-                    <p className="text-sm mt-2 text-green-400">
-                      {t.howToFix} <span className="text-zinc-300">{firstIssue.fix}</span>
-                    </p>
-                  </div>
-
-                  {firstIssue.social_proof && (
-                    <div className="border-l-2 border-zinc-700 pl-3">
-                      <p className="text-zinc-500 text-xs italic leading-relaxed">
-                        "{firstIssue.social_proof.quote}"
-                      </p>
-                      <p className="text-zinc-600 text-xs mt-1">
-                        — Vu sur {firstIssue.social_proof.source}
+              {isPaid ? (
+                criticalMajorIssues.map((issue, i) => (
+                  <IssueCard key={i} issue={issue} t={t} />
+                ))
+              ) : (
+                <>
+                  {criticalMajorIssues[0] && (
+                    <IssueCard issue={criticalMajorIssues[0]} t={t} />
+                  )}
+                  {criticalMajorIssues.slice(1).map((issue, i) => (
+                    <div
+                      key={i}
+                      className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+                      style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
+                    >
+                      <span className="text-base flex-shrink-0">🔒</span>
+                      <p
+                        className="font-semibold text-sm text-white"
+                        style={{ filter: 'blur(4px)', userSelect: 'none' }}
+                      >
+                        {issue.title}
                       </p>
                     </div>
-                  )}
-
-                  {firstIssue.steps && firstIssue.steps.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      {firstIssue.steps.map((step, i) => (
-                        <div key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-                          <span
-                            className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                            style={{ background: 'rgba(255,69,0,0.15)', color: '#FF4500' }}
-                          >
-                            {i + 1}
-                          </span>
-                          <span className="mt-px">{step}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                  ))}
+                </>
               )}
-
-              {/* Locked critical/major issues */}
-              {lockedCriticalMajor.map((issue, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-                  style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
-                >
-                  <span className="text-base flex-shrink-0">🔒</span>
-                  <p
-                    className="font-semibold text-sm text-white"
-                    style={{ filter: 'blur(4px)', userSelect: 'none' }}
-                  >
-                    {issue.title}
-                  </p>
-                </div>
-              ))}
             </div>
           </section>
         )}
 
-        {/* 4. 🟡 Minor Issues — all blurred */}
+        {/* 4. 🟡 Minor Issues */}
         {minorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
             <h2 className="text-xs font-bold tracking-widest text-yellow-400 mb-4">
               🟡 {t.minorTitle}
             </h2>
             <div className="flex flex-col gap-3">
-              {minorIssues.map((issue, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-                  style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
-                >
-                  <span className="text-base flex-shrink-0">🔒</span>
-                  <p
-                    className="font-semibold text-sm text-white"
-                    style={{ filter: 'blur(4px)', userSelect: 'none' }}
+              {isPaid ? (
+                minorIssues.map((issue, i) => (
+                  <IssueCard key={i} issue={issue} t={t} />
+                ))
+              ) : (
+                minorIssues.map((issue, i) => (
+                  <div
+                    key={i}
+                    className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+                    style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
                   >
-                    {issue.title}
-                  </p>
-                </div>
-              ))}
+                    <span className="text-base flex-shrink-0">🔒</span>
+                    <p
+                      className="font-semibold text-sm text-white"
+                      style={{ filter: 'blur(4px)', userSelect: 'none' }}
+                    >
+                      {issue.title}
+                    </p>
+                  </div>
+                ))
+              )}
             </div>
           </section>
         )}
 
-        {/* 5. 🟢 Positives — completely hidden, just count + teaser */}
+        {/* 5. 🟢 Positives */}
         {result.positives.length > 0 && (
-          <div
-            className="w-full max-w-2xl rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-            style={{ borderLeft: '3px solid #22c55e' }}
-          >
-            <p className="text-zinc-400 text-sm leading-snug">
-              {t.positivesLocked(result.positives.length)}
-            </p>
-          </div>
+          <section className="w-full max-w-2xl">
+            {isPaid ? (
+              <>
+                <h2 className="text-xs font-bold tracking-widest text-green-400 mb-4">
+                  🟢 {t.positivesTitle}
+                </h2>
+                <div className="flex flex-col gap-3">
+                  {result.positives.map((pos, i) => (
+                    <PositiveCard key={i} positive={pos} t={t} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div
+                className="w-full rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
+                style={{ borderLeft: '3px solid #22c55e' }}
+              >
+                <p className="text-zinc-400 text-sm leading-snug">
+                  {t.positivesLocked(result.positives.length)}
+                </p>
+              </div>
+            )}
+          </section>
         )}
 
-        {/* 6. Pricing block */}
-        <div className="w-full max-w-2xl flex flex-col gap-6">
-          <div className="text-center">
-            <p className="text-white font-bold text-xl mb-1">{t.ctaTitle}</p>
-            <p className="text-zinc-500 text-sm">{t.ctaSub}</p>
-          </div>
+        {/* 6. Pricing block — hidden when paid */}
+        {!isPaid && (
+          <div className="w-full max-w-2xl flex flex-col gap-6">
+            <div className="text-center">
+              <p className="text-white font-bold text-xl mb-1">{t.ctaTitle}</p>
+              <p className="text-zinc-500 text-sm">{t.ctaSub}</p>
+            </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {plans[lang].map((plan) => (
-              <div
-                key={plan.id}
-                className="rounded-2xl flex flex-col gap-5 px-5 py-6 relative"
-                style={{
-                  background: '#111',
-                  border: plan.featured
-                    ? '1px solid rgba(255,69,0,0.6)'
-                    : '1px solid rgba(255,255,255,0.07)',
-                  transform: plan.featured ? 'scale(1.02)' : 'none',
-                }}
-              >
-                {plan.badge && (
-                  <span
-                    className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
-                    style={{ background: plan.badgeColor }}
-                  >
-                    {plan.badge}
-                  </span>
-                )}
-
-                <div>
-                  <p className="font-bold text-white text-base mb-2">{plan.name}</p>
-                  <p className="text-2xl font-bold text-white">{plan.price}</p>
-                  <p className="text-zinc-500 text-xs mt-0.5">{plan.priceNote}</p>
-                </div>
-
-                <ul className="flex flex-col gap-2 flex-1">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
-                      <span className="text-green-400 flex-shrink-0 mt-px">✅</span>
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-
-                <button
-                  onClick={() => handleCheckout(plan.id)}
-                  disabled={checkoutLoading !== null}
-                  className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={
-                    plan.featured
-                      ? { background: '#FF4500', color: '#fff' }
-                      : { background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }
-                  }
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {plans[lang].map((plan) => (
+                <div
+                  key={plan.id}
+                  className="rounded-2xl flex flex-col gap-5 px-5 py-6 relative"
+                  style={{
+                    background: '#111',
+                    border: plan.featured
+                      ? '1px solid rgba(255,69,0,0.6)'
+                      : '1px solid rgba(255,255,255,0.07)',
+                    transform: plan.featured ? 'scale(1.02)' : 'none',
+                  }}
                 >
-                  {checkoutLoading === plan.id ? '...' : plan.button}
-                </button>
-              </div>
-            ))}
-          </div>
+                  {plan.badge && (
+                    <span
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full text-xs font-bold text-white whitespace-nowrap"
+                      style={{ background: plan.badgeColor }}
+                    >
+                      {plan.badge}
+                    </span>
+                  )}
 
-          <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
-        </div>
+                  <div>
+                    <p className="font-bold text-white text-base mb-2">{plan.name}</p>
+                    <p className="text-2xl font-bold text-white">{plan.price}</p>
+                    <p className="text-zinc-500 text-xs mt-0.5">{plan.priceNote}</p>
+                  </div>
+
+                  <ul className="flex flex-col gap-2 flex-1">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2 text-sm text-zinc-300">
+                        <span className="text-green-400 flex-shrink-0 mt-px">✅</span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+
+                  <button
+                    onClick={() => handleCheckout(plan.id)}
+                    disabled={checkoutLoading !== null}
+                    className="w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={
+                      plan.featured
+                        ? { background: '#FF4500', color: '#fff' }
+                        : { background: 'transparent', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }
+                    }
+                  >
+                    {checkoutLoading === plan.id ? '...' : plan.button}
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
+          </div>
+        )}
 
         {/* Share */}
         <div className="w-full max-w-2xl flex flex-col gap-3 pt-2">
           <p className="text-xs font-bold tracking-widest text-zinc-500 text-center">{t.shareTitle}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
-            {/* X (Twitter) — opens new tab */}
             <a
               href={twitterUrl}
               target="_blank"
@@ -497,7 +589,6 @@ export default function RoastPage() {
               X
             </a>
 
-            {/* TikTok — copies text + opens tiktok.com */}
             <button
               onClick={async () => {
                 await copyToClipboard(sm?.tiktok ?? fallbackText, t.toastTiktok)
@@ -512,7 +603,6 @@ export default function RoastPage() {
               TikTok
             </button>
 
-            {/* Instagram — copies text + opens instagram.com */}
             <button
               onClick={async () => {
                 await copyToClipboard(sm?.instagram ?? fallbackText, t.toastInstagram)
@@ -530,7 +620,6 @@ export default function RoastPage() {
               Instagram
             </button>
 
-            {/* Reddit — opens new tab */}
             <a
               href={redditUrl}
               target="_blank"
@@ -562,5 +651,13 @@ export default function RoastPage() {
         <p className="text-zinc-600 text-xs">{t.footer}</p>
       </footer>
     </div>
+  )
+}
+
+export default function RoastPage() {
+  return (
+    <Suspense>
+      <RoastContent />
+    </Suspense>
   )
 }

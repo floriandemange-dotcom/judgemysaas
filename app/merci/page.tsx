@@ -1,13 +1,14 @@
 'use client'
 
 import { useSearchParams, useRouter } from 'next/navigation'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/lib/supabase-client'
 
 function MerciContent() {
   const params = useSearchParams()
   const router = useRouter()
   const plan = params.get('plan') ?? ''
+  const roastId = params.get('roast_id') ?? ''
   const isIllimite = plan === 'illimite'
 
   const [email, setEmail] = useState('')
@@ -15,6 +16,15 @@ function MerciContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [accountCreated, setAccountCreated] = useState(false)
+
+  useEffect(() => {
+    if (roastId) {
+      localStorage.setItem(
+        `paid_${roastId}`,
+        JSON.stringify({ plan, paid: true, timestamp: Date.now() })
+      )
+    }
+  }, [roastId, plan])
 
   async function handleCreateAccount(e: React.FormEvent) {
     e.preventDefault()
@@ -51,7 +61,7 @@ function MerciContent() {
         <p className="text-zinc-400 text-base max-w-sm leading-relaxed">
           {isIllimite
             ? 'Bienvenue dans le plan Illimité. Crée ton compte ci-dessous pour accéder à ton dashboard.'
-            : 'Ton rapport complet arrive dans quelques secondes.'}
+            : 'Ton rapport complet est prêt.'}
         </p>
 
         {isIllimite && !accountCreated && (
@@ -95,12 +105,20 @@ function MerciContent() {
             >
               Accéder à mon dashboard →
             </button>
+            {roastId && (
+              <button
+                onClick={() => router.push(`/roast?id=${roastId}`)}
+                className="px-6 py-3 rounded-xl font-semibold text-sm text-white hover:opacity-80 transition-opacity border border-zinc-700"
+              >
+                Voir mon rapport complet →
+              </button>
+            )}
           </div>
         )}
 
         {!isIllimite && (
           <button
-            onClick={() => router.push('/roast')}
+            onClick={() => router.push(roastId ? `/roast?id=${roastId}` : '/roast')}
             style={{ background: '#FF4500' }}
             className="mt-2 px-6 py-3 rounded-xl font-semibold text-sm text-white hover:opacity-90 transition-opacity"
           >
