@@ -273,6 +273,7 @@ function RoastContent() {
   const [isPaid, setIsPaid] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
   const idFromUrl = searchParams.get('id')
@@ -299,23 +300,33 @@ function RoastContent() {
 
   async function handleCheckout(planId: string) {
     setCheckoutLoading(planId)
+    setCheckoutError(null)
     try {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ plan: planId, roast_id: result?.id ?? '' }),
       })
-      const data = await res.json()
+      let data: { url?: string; error?: string } = {}
+      try {
+        data = await res.json()
+      } catch {
+        setCheckoutError(`Réponse invalide du serveur (HTTP ${res.status})`)
+        setCheckoutLoading(null)
+        return
+      }
       if (data.url) {
         window.location.href = data.url
       } else {
-        console.error('[checkout] API error:', data.error ?? data)
-        showToast(data.error ?? 'Erreur lors du paiement. Réessaie.')
+        const msg = data.error ?? `Erreur serveur (HTTP ${res.status})`
+        console.error('[checkout] API error:', msg)
+        setCheckoutError(msg)
         setCheckoutLoading(null)
       }
     } catch (err) {
-      console.error('[checkout] fetch error:', err)
-      showToast('Erreur lors du paiement. Réessaie.')
+      const msg = err instanceof Error ? err.message : 'Erreur réseau'
+      console.error('[checkout] fetch error:', msg)
+      setCheckoutError(msg)
       setCheckoutLoading(null)
     }
   }
@@ -568,6 +579,12 @@ function RoastContent() {
             </div>
 
             <p className="text-zinc-600 text-xs text-center">{t.pricingSub}</p>
+
+            {checkoutError && (
+              <div className="rounded-xl border border-red-800 bg-red-950/40 px-4 py-3 text-sm text-red-400 text-center">
+                ❌ {checkoutError}
+              </div>
+            )}
           </div>
         )}
 

@@ -40,11 +40,13 @@ export async function POST(request: Request) {
 
     const validPlan = plan as Plan
 
-    // Derive base URL from request if env var not set (avoids localhost on Vercel)
+    // Derive base URL: env var → forwarded headers (Vercel) → request URL
     const envAppUrl = resolveEnvVar('NEXT_PUBLIC_APP_URL')
-    const requestOrigin = new URL(request.url).origin
-    const appUrl = envAppUrl || requestOrigin
-    console.log('[checkout] appUrl:', appUrl, '| source:', envAppUrl ? 'env' : 'request origin')
+    const fwdHost = request.headers.get('x-forwarded-host') || request.headers.get('host') || ''
+    const fwdProto = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || 'https'
+    const derivedUrl = fwdHost ? `${fwdProto}://${fwdHost}` : new URL(request.url).origin
+    const appUrl = envAppUrl || derivedUrl
+    console.log('[checkout] appUrl:', appUrl, '| source:', envAppUrl ? 'env' : `headers(${fwdProto}://${fwdHost})`)
 
     const config = planConfig[validPlan]
     const stripe = new Stripe(stripeKey)
