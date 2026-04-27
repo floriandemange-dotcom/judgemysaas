@@ -150,8 +150,8 @@ const labels = {
     shareTitle: 'Partager mon score',
     shareText: (score: number, total: number) =>
       `Mon site a eu ${score}/100 sur JudgeMyApp 😬\nL'IA a trouvé ${total} problèmes qui font fuir mes clients.\nTu veux savoir pour le tien ? → judgemyapp.fr`,
-    toastTiktok: 'Copié ! Colle-le dans ta bio ou ta vidéo TikTok 🎵',
-    toastInstagram: 'Copié ! Colle-le dans ta story ou ta bio Instagram 📸',
+    toastTiktok: 'Texte copié ! Colle-le dans ta vidéo TikTok 🎵',
+    toastInstagram: 'Texte copié ! Colle-le dans ta story Instagram 📸',
     footer: 'JudgeMyApp · France',
   },
   en: {
@@ -167,8 +167,8 @@ const labels = {
     shareTitle: 'Share my score',
     shareText: (score: number, total: number) =>
       `My site scored ${score}/100 on JudgeMyApp 😬\nAI found ${total} issues driving my customers away.\nWant to know about yours? → judgemyapp.fr`,
-    toastTiktok: 'Copied! Paste it in your TikTok bio or video 🎵',
-    toastInstagram: 'Copied! Paste it in your Instagram story or bio 📸',
+    toastTiktok: 'Text copied! Paste it in your TikTok video 🎵',
+    toastInstagram: 'Text copied! Paste it in your Instagram story 📸',
     footer: 'JudgeMyApp · France',
   },
 }
@@ -519,9 +519,12 @@ export default function RoastPage() {
               X
             </a>
 
-            {/* TikTok — copies to clipboard */}
+            {/* TikTok — copies text + opens tiktok.com */}
             <button
-              onClick={() => copyToClipboard(sm?.tiktok ?? fallbackText, t.toastTiktok)}
+              onClick={async () => {
+                await copyToClipboard(sm?.tiktok ?? fallbackText, t.toastTiktok)
+                window.open('https://www.tiktok.com', '_blank', 'noopener,noreferrer')
+              }}
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"
               style={{ background: '#000', color: '#fff', border: '1px solid rgba(255,255,255,0.25)' }}
             >
@@ -531,9 +534,12 @@ export default function RoastPage() {
               TikTok
             </button>
 
-            {/* Instagram — copies to clipboard */}
+            {/* Instagram — copies text + opens instagram.com */}
             <button
-              onClick={() => copyToClipboard(sm?.instagram ?? fallbackText, t.toastInstagram)}
+              onClick={async () => {
+                await copyToClipboard(sm?.instagram ?? fallbackText, t.toastInstagram)
+                window.open('https://www.instagram.com', '_blank', 'noopener,noreferrer')
+              }}
               className="flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-80"
               style={{
                 background: 'linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
