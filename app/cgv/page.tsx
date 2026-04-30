@@ -26,7 +26,6 @@ export default function CGV() {
           </p>
           <ul className="text-zinc-400 text-sm leading-relaxed space-y-2">
             <li className="flex gap-2"><span style={{ color: '#FF4500' }}>•</span> <span><strong className="text-white">Essentiel</strong> — 19 € paiement unique. Accès à un rapport d'analyse complet.</span></li>
-            <li className="flex gap-2"><span style={{ color: '#FF4500' }}>•</span> <span><strong className="text-white">Pro</strong> — 49 € paiement unique. Rapport approfondi avec recommandations détaillées.</span></li>
             <li className="flex gap-2"><span style={{ color: '#FF4500' }}>•</span> <span><strong className="text-white">Illimité</strong> — 19 € / mois, abonnement mensuel résiliable à tout moment. Analyses illimitées et monitoring continu.</span></li>
           </ul>
         </section>
