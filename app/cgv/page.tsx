@@ -15,7 +15,7 @@ export default function CGV() {
           <h2 className="text-lg font-semibold text-white mb-2">1. Vendeur</h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
             Florian Demange, éditeur du service JudgeMyApp.<br />
-            Contact : <a href="mailto:floriandemange@icloud.com" className="text-orange-500 hover:underline">floriandemange@icloud.com</a>
+            Contact : <a href="mailto:contact@judgemyapp.fr" className="text-orange-500 hover:underline">contact@judgemyapp.fr</a>
           </p>
         </section>
 
@@ -43,7 +43,7 @@ export default function CGV() {
           <p className="text-zinc-400 text-sm leading-relaxed">
             Conformément à l'article L221-18 du Code de la consommation, vous disposez d'un délai de <strong className="text-white">14 jours</strong> à compter
             de la date d'achat pour exercer votre droit de rétractation, sans avoir à justifier de motif.
-            Pour ce faire, contactez-nous à <a href="mailto:floriandemange@icloud.com" className="text-orange-500 hover:underline">floriandemange@icloud.com</a> avec
+            Pour ce faire, contactez-nous à <a href="mailto:contact@judgemyapp.fr" className="text-orange-500 hover:underline">contact@judgemyapp.fr</a> avec
             votre email d'achat. Le remboursement sera effectué dans les 14 jours suivant la réception de votre demande.
           </p>
         </section>

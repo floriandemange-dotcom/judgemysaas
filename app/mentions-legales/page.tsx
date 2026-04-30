@@ -14,7 +14,7 @@ export default function MentionsLegales() {
           <h2 className="text-lg font-semibold text-white mb-2">Éditeur du site</h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
             Florian Demange<br />
-            Contact : <a href="mailto:floriandemange@icloud.com" className="text-orange-500 hover:underline">floriandemange@icloud.com</a>
+            Contact : <a href="mailto:contact@judgemyapp.fr" className="text-orange-500 hover:underline">contact@judgemyapp.fr</a>
           </p>
         </section>
 
