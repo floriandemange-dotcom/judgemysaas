@@ -140,42 +140,42 @@ const plans: Record<'fr' | 'en', Plan[]> = {
 const labels = {
   fr: {
     back: 'Analyser un autre site',
-    scoreBanner: (score: number) => `Ton site a obtenu ${score}/100`,
-    criticalTitle: 'CE QUI FAIT FUIR TES VISITEURS',
-    minorTitle: 'CE QUE TU PEUX AMÉLIORER',
-    positivesTitle: 'CE QUI MARCHE BIEN',
+    scoreBanner: (score: number) => `Score global : ${score}/100`,
+    criticalTitle: 'Ce qui fait fuir tes visiteurs',
+    minorTitle: 'Ce que tu peux améliorer',
+    positivesTitle: 'Ce qui marche bien',
     positivesLocked: (n: number) =>
-      `🔒 ${n} point${n > 1 ? 's' : ''} fort${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''} — Découvrez comment les exploiter pour convertir plus`,
-    howToFix: '✅ Comment réparer :',
-    exploitTitle: '🚀 Comment en profiter :',
-    ctaTitle: 'Débloquez votre rapport complet',
-    ctaSub: "Tous vos problèmes · Conseils d'exploitation de vos points forts · Accès immédiat",
-    pricingSub: 'Paiement sécurisé · Satisfait ou remboursé 14 jours',
-    shareTitle: 'Partager mon score',
+      `${n} point${n > 1 ? 's' : ''} fort${n > 1 ? 's' : ''} identifié${n > 1 ? 's' : ''} — débloquer pour voir comment les exploiter`,
+    howToFix: 'Comment corriger :',
+    exploitTitle: 'Comment en profiter :',
+    ctaTitle: 'Rapport complet',
+    ctaSub: "Tous les problèmes détaillés · Plan d'action · Points forts exploitables · Accès immédiat",
+    pricingSub: 'Paiement sécurisé · Remboursé si insatisfait sous 14 jours',
+    shareTitle: 'Partager',
     shareText: (score: number, total: number) =>
-      `Mon site a eu ${score}/100 sur JudgeMyApp 😬\nL'IA a trouvé ${total} problèmes qui font fuir mes clients.\nTu veux savoir pour le tien ? → judgemyapp.fr`,
-    toastTiktok: 'Texte copié ! Colle-le dans ta vidéo TikTok 🎵',
-    toastInstagram: 'Texte copié ! Colle-le dans ta story Instagram 📸',
+      `Mon site a eu ${score}/100 sur JudgeMyApp. ${total} problèmes détectés qui font fuir mes clients. → judgemyapp.fr`,
+    toastTiktok: 'Texte copié — colle-le dans ta vidéo TikTok',
+    toastInstagram: 'Texte copié — colle-le dans ta story Instagram',
     footer: 'JudgeMyApp · France',
   },
   en: {
     back: 'Analyse another site',
-    scoreBanner: (score: number) => `Your site scored ${score}/100`,
-    criticalTitle: 'WHAT DRIVES YOUR VISITORS AWAY',
-    minorTitle: 'WHAT YOU CAN IMPROVE',
-    positivesTitle: 'WHAT WORKS WELL',
+    scoreBanner: (score: number) => `Overall score: ${score}/100`,
+    criticalTitle: 'What drives your visitors away',
+    minorTitle: 'What you can improve',
+    positivesTitle: 'What works well',
     positivesLocked: (n: number) =>
-      `🔒 ${n} strength${n > 1 ? 's' : ''} identified — Discover how to leverage them to convert more`,
-    howToFix: '✅ How to fix it:',
-    exploitTitle: '🚀 How to leverage it:',
-    ctaTitle: 'Unlock your full report',
-    ctaSub: 'All your issues · How to leverage your strengths · Instant access',
+      `${n} strength${n > 1 ? 's' : ''} identified — unlock to see how to leverage them`,
+    howToFix: 'How to fix it:',
+    exploitTitle: 'How to leverage it:',
+    ctaTitle: 'Full report',
+    ctaSub: 'All issues in detail · Action plan · Exploitable strengths · Instant access',
     pricingSub: 'Secure payment · 14-day money-back guarantee',
-    shareTitle: 'Share my score',
+    shareTitle: 'Share',
     shareText: (score: number, total: number) =>
-      `My site scored ${score}/100 on JudgeMyApp 😬\nAI found ${total} issues driving my customers away.\nWant to know about yours? → judgemyapp.fr`,
-    toastTiktok: 'Text copied! Paste it in your TikTok video 🎵',
-    toastInstagram: 'Text copied! Paste it in your Instagram story 📸',
+      `My site scored ${score}/100 on JudgeMyApp. ${total} issues found driving customers away. → judgemyapp.fr`,
+    toastTiktok: 'Text copied — paste it in your TikTok video',
+    toastInstagram: 'Text copied — paste it in your Instagram story',
     footer: 'JudgeMyApp · France',
   },
 }
@@ -187,42 +187,40 @@ function IssueCard({
   issue: Issue
   t: typeof labels['fr']
 }) {
-  const borderColor =
-    issue.severity === 'critical' ? '#ef4444' : issue.severity === 'major' ? '#f97316' : '#eab308'
+  const dotColor =
+    issue.severity === 'critical' ? '#ef4444' : issue.severity === 'major' ? '#f97316' : '#ca8a04'
 
   return (
-    <div
-      className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-4"
-      style={{ borderLeft: `3px solid ${borderColor}` }}
-    >
+    <div className="rounded-xl bg-zinc-900/70 px-5 py-5 flex flex-col gap-4 border border-zinc-800/60">
       <div>
-        <p className="font-semibold text-sm text-white mb-1">❌ {issue.title}</p>
-        <p className="text-zinc-400 text-sm leading-relaxed">{issue.description}</p>
-        <p className="text-sm mt-2 text-green-400">
+        <div className="flex items-start gap-2.5 mb-2">
+          <span
+            className="flex-shrink-0 mt-1 w-1.5 h-1.5 rounded-full"
+            style={{ background: dotColor, marginTop: 6 }}
+          />
+          <p className="font-semibold text-sm text-white leading-snug">{issue.title}</p>
+        </div>
+        <p className="text-zinc-400 text-sm leading-relaxed pl-4">{issue.description}</p>
+        <p className="text-sm mt-2 pl-4 text-zinc-500">
           {t.howToFix} <span className="text-zinc-300">{issue.fix}</span>
         </p>
       </div>
 
       {issue.social_proof && (
-        <div className="border-l-2 border-zinc-700 pl-3">
+        <div className="pl-4">
           <p className="text-zinc-500 text-xs italic leading-relaxed">
-            "{issue.social_proof.quote}"
+            «&nbsp;{issue.social_proof.quote}&nbsp;»
           </p>
-          <p className="text-zinc-600 text-xs mt-1">— Vu sur {issue.social_proof.source}</p>
+          <p className="text-zinc-600 text-xs mt-1">— {issue.social_proof.source}</p>
         </div>
       )}
 
       {issue.steps && issue.steps.length > 0 && (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 pl-4">
           {issue.steps.map((step, i) => (
-            <div key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-              <span
-                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'rgba(255,69,0,0.15)', color: '#FF4500' }}
-              >
-                {i + 1}
-              </span>
-              <span className="mt-px">{step}</span>
+            <div key={i} className="flex items-start gap-3 text-sm text-zinc-400">
+              <span className="flex-shrink-0 text-zinc-600 font-mono text-xs mt-0.5">{i + 1}.</span>
+              <span>{step}</span>
             </div>
           ))}
         </div>
@@ -239,27 +237,22 @@ function PositiveCard({
   t: typeof labels['fr']
 }) {
   return (
-    <div
-      className="rounded-xl bg-zinc-900 px-5 py-5 flex flex-col gap-4"
-      style={{ borderLeft: '3px solid #22c55e' }}
-    >
+    <div className="rounded-xl bg-zinc-900/70 px-5 py-5 flex flex-col gap-4 border border-zinc-800/60">
       <div>
-        <p className="font-semibold text-sm text-white mb-1">✅ {positive.title}</p>
-        <p className="text-zinc-400 text-sm leading-relaxed">{positive.description}</p>
+        <div className="flex items-start gap-2.5 mb-2">
+          <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500" style={{ marginTop: 6 }} />
+          <p className="font-semibold text-sm text-white leading-snug">{positive.title}</p>
+        </div>
+        <p className="text-zinc-400 text-sm leading-relaxed pl-4">{positive.description}</p>
       </div>
 
       {positive.exploit_steps && positive.exploit_steps.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-green-400">{t.exploitTitle}</p>
+        <div className="flex flex-col gap-2 pl-4">
+          <p className="text-xs text-zinc-500">{t.exploitTitle}</p>
           {positive.exploit_steps.map((step, i) => (
-            <div key={i} className="flex items-start gap-3 text-sm text-zinc-300">
-              <span
-                className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
-                style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e' }}
-              >
-                {i + 1}
-              </span>
-              <span className="mt-px">{step}</span>
+            <div key={i} className="flex items-start gap-3 text-sm text-zinc-400">
+              <span className="flex-shrink-0 text-zinc-600 font-mono text-xs mt-0.5">{i + 1}.</span>
+              <span>{step}</span>
             </div>
           ))}
         </div>
@@ -421,11 +414,11 @@ function RoastContent() {
           "{result.summary}"
         </blockquote>
 
-        {/* 3. 🔴 Critical / Major Issues */}
+        {/* 3. Critical / Major Issues */}
         {criticalMajorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
-            <h2 className="text-xs font-bold tracking-widest text-red-400 mb-4">
-              🔴 {t.criticalTitle}
+            <h2 className="text-xs font-semibold tracking-wider text-red-400/80 uppercase mb-5">
+              {t.criticalTitle}
             </h2>
             <div className="flex flex-col gap-3">
               {isPaid ? (
@@ -440,10 +433,9 @@ function RoastContent() {
                   {criticalMajorIssues.slice(1).map((issue, i) => (
                     <div
                       key={i}
-                      className="rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-                      style={{ borderLeft: `3px solid ${issueBorderColor(issue.severity)}` }}
+                      className="rounded-xl bg-zinc-900/50 px-5 py-4 flex items-center gap-3 select-none border border-zinc-800/40"
                     >
-                      <span className="text-base flex-shrink-0">🔒</span>
+                      <span className="text-zinc-600 text-xs flex-shrink-0">●</span>
                       <p
                         className="font-semibold text-sm text-white"
                         style={{ filter: 'blur(4px)', userSelect: 'none' }}
@@ -458,11 +450,11 @@ function RoastContent() {
           </section>
         )}
 
-        {/* 4. 🟡 Minor Issues */}
+        {/* 4. Minor Issues */}
         {minorIssues.length > 0 && (
           <section className="w-full max-w-2xl">
-            <h2 className="text-xs font-bold tracking-widest text-yellow-400 mb-4">
-              🟡 {t.minorTitle}
+            <h2 className="text-xs font-semibold tracking-wider text-yellow-400/80 uppercase mb-5">
+              {t.minorTitle}
             </h2>
             <div className="flex flex-col gap-3">
               {isPaid ? (
@@ -495,8 +487,8 @@ function RoastContent() {
           <section className="w-full max-w-2xl">
             {isPaid ? (
               <>
-                <h2 className="text-xs font-bold tracking-widest text-green-400 mb-4">
-                  🟢 {t.positivesTitle}
+                <h2 className="text-xs font-semibold tracking-wider text-emerald-400/80 uppercase mb-5">
+                  {t.positivesTitle}
                 </h2>
                 <div className="flex flex-col gap-3">
                   {result.positives.map((pos, i) => (
@@ -505,11 +497,8 @@ function RoastContent() {
                 </div>
               </>
             ) : (
-              <div
-                className="w-full rounded-xl bg-zinc-900 px-5 py-4 flex items-center gap-3 select-none"
-                style={{ borderLeft: '3px solid #22c55e' }}
-              >
-                <p className="text-zinc-400 text-sm leading-snug">
+              <div className="w-full rounded-xl bg-zinc-900/50 border border-zinc-800/40 px-5 py-4 select-none">
+                <p className="text-zinc-500 text-sm leading-snug">
                   {t.positivesLocked(result.positives.length)}
                 </p>
               </div>
@@ -590,7 +579,7 @@ function RoastContent() {
 
         {/* Share */}
         <div className="w-full max-w-2xl flex flex-col gap-3 pt-2">
-          <p className="text-xs font-bold tracking-widest text-zinc-500 text-center">{t.shareTitle}</p>
+          <p className="text-xs tracking-wider text-zinc-600 text-center uppercase">{t.shareTitle}</p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
 
             <a

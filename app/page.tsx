@@ -15,23 +15,23 @@ const content = {
     apiError: "Erreur lors de l'analyse. Réessaie.",
     limitError: 'Limite de 3 analyses par jour atteinte. Crée un compte gratuit pour continuer.',
     loadingMessages: [
-      '🔍 On inspecte ton site...',
-      "👀 L'IA examine chaque page...",
-      '💡 On identifie ce qui bloque tes ventes...',
-      '📊 On prépare ton rapport...',
+      'On parcourt ton site...',
+      'On examine chaque élément...',
+      'On identifie les points de friction...',
+      'On prépare ton diagnostic...',
     ],
     cards: [
-      { icon: '😵', title: 'Clarté du message', desc: 'On comprend ce que tu vends en 5 secondes ?' },
-      { icon: '💸', title: 'Taux de conversion', desc: 'Pourquoi les visiteurs partent sans acheter ?' },
-      { icon: '📱', title: 'Expérience mobile', desc: 'Ton site marche bien sur téléphone ?' },
+      { icon: '—', title: 'Clarté du message', desc: 'Est-ce qu\'on comprend ce que tu vends en 5 secondes ?' },
+      { icon: '—', title: 'Taux de conversion', desc: 'Pourquoi les visiteurs partent sans acheter ?' },
+      { icon: '—', title: 'Expérience mobile', desc: 'Ton site fonctionne-t-il bien sur téléphone ?' },
     ],
-    trustTitle: 'Ils nous font confiance —',
+    trustTitle: 'Déjà',
     trustCount: '47 sites',
     trustSuffix: ' analysés cette semaine',
     stats: [
-      { icon: '📊', value: '30 secondes', label: 'Temps d\'analyse moyen' },
-      { icon: '🔍', value: '6 problèmes', label: 'Détectés en moyenne par site' },
-      { icon: '✅', value: 'Gratuit', label: 'Sans inscription requise' },
+      { icon: '', value: '30 sec', label: 'Temps de diagnostic moyen' },
+      { icon: '', value: '6 problèmes', label: 'Détectés en moyenne par site' },
+      { icon: '', value: 'Gratuit', label: 'Sans inscription requise' },
     ],
     footer: 'JudgeMyApp © 2025 · France',
   },
@@ -46,23 +46,23 @@ const content = {
     apiError: 'Analysis failed. Please try again.',
     limitError: 'Daily limit of 3 analyses reached. Create a free account to continue.',
     loadingMessages: [
-      '🔍 Inspecting your site...',
-      '👀 AI is scanning each page...',
-      "💡 Identifying what's blocking your sales...",
-      '📊 Preparing your report...',
+      'Going through your site...',
+      'Examining each element...',
+      'Identifying friction points...',
+      'Preparing your report...',
     ],
     cards: [
-      { icon: '😵', title: 'Message clarity', desc: 'Do visitors understand what you sell in 5 seconds?' },
-      { icon: '💸', title: 'Conversion rate', desc: 'Why do visitors leave without buying?' },
-      { icon: '📱', title: 'Mobile experience', desc: 'Does your site work well on mobile?' },
+      { icon: '—', title: 'Message clarity', desc: 'Do visitors understand what you sell in 5 seconds?' },
+      { icon: '—', title: 'Conversion rate', desc: 'Why do visitors leave without buying?' },
+      { icon: '—', title: 'Mobile experience', desc: 'Does your site work well on mobile?' },
     ],
-    trustTitle: 'Trusted by —',
+    trustTitle: 'Already',
     trustCount: '47 sites',
-    trustSuffix: ' analysed this week',
+    trustSuffix: ' reviewed this week',
     stats: [
-      { icon: '📊', value: '30 seconds', label: 'Average analysis time' },
-      { icon: '🔍', value: '6 issues', label: 'Found on average per site' },
-      { icon: '✅', value: 'Free', label: 'No sign-up required' },
+      { icon: '', value: '30 sec', label: 'Average review time' },
+      { icon: '', value: '6 issues', label: 'Found on average per site' },
+      { icon: '', value: 'Free', label: 'No sign-up required' },
     ],
     footer: 'JudgeMyApp © 2025 · France',
   },
@@ -268,10 +268,9 @@ export default function Home() {
         {/* Feature cards */}
         <div className="mt-20 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full text-left">
           {t.cards.map((card) => (
-            <div key={card.title} className="rounded-2xl border border-zinc-800 bg-zinc-900/60 px-5 py-5">
-              <div className="text-2xl mb-3">{card.icon}</div>
-              <p className="font-semibold text-sm text-white mb-1">{card.title}</p>
-              <p className="text-zinc-500 text-sm leading-snug">{card.desc}</p>
+            <div key={card.title} className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 px-5 py-5">
+              <p className="font-semibold text-sm text-white mb-2">{card.title}</p>
+              <p className="text-zinc-500 text-sm leading-relaxed">{card.desc}</p>
             </div>
           ))}
         </div>
@@ -287,7 +286,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
           {t.stats.map((s) => (
             <div key={s.label} className="flex flex-col items-center gap-1">
-              <span className="text-3xl font-bold text-white">{s.icon} {s.value}</span>
+              <span className="text-3xl font-bold text-white">{s.value}</span>
               <span className="text-zinc-500 text-sm">{s.label}</span>
             </div>
           ))}
