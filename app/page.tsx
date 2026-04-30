@@ -95,6 +95,10 @@ export default function Home() {
   const [progress, setProgress] = useState(0)
   const [scrolled, setScrolled] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(null)
+  const [contactName, setContactName] = useState('')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [contactStatus, setContactStatus] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle')
   const router = useRouter()
 
   /* Scroll → nav background */
@@ -145,6 +149,25 @@ export default function Home() {
     } catch {
       setError("L'analyse a échoué. Réessaie.")
       setLoading(false)
+    }
+  }
+
+  async function handleContact(e: React.FormEvent) {
+    e.preventDefault()
+    setContactStatus('sending')
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: contactName, email: contactEmail, message: contactMessage }),
+      })
+      if (!res.ok) throw new Error()
+      setContactStatus('sent')
+      setContactName('')
+      setContactEmail('')
+      setContactMessage('')
+    } catch {
+      setContactStatus('error')
     }
   }
 
@@ -441,25 +464,99 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── CONTACT ── */}
+      <section style={{ background: '#0d0d0d', borderTop: '1px solid #141414', borderBottom: '1px solid #141414', padding: '96px 24px' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+          <FadeUp>
+            <p style={{ color: '#FF4500', fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16 }}>Contact</p>
+            <h2 style={{ fontSize: 'clamp(26px, 3.5vw, 42px)', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 8 }}>Une question ?</h2>
+            <p style={{ color: '#444', fontSize: 14, marginBottom: 6 }}>Je réponds généralement sous 24h.</p>
+            <a
+              href="mailto:contact@judgemyapp.fr"
+              style={{ color: '#555', fontSize: 13, display: 'inline-block', marginBottom: 48, transition: 'color 0.2s' }}
+              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#aaa')}
+              onMouseLeave={e => ((e.target as HTMLElement).style.color = '#555')}
+            >
+              contact@judgemyapp.fr
+            </a>
+          </FadeUp>
+
+          <FadeUp delay={100}>
+            {contactStatus === 'sent' ? (
+              <div style={{ background: '#0a1a0a', border: '1px solid #1a3a1a', borderRadius: 12, padding: '24px', textAlign: 'center' }}>
+                <p style={{ color: '#4ade80', fontSize: 14 }}>Message envoyé. Je reviens vers toi sous 24h.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleContact} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                  <input
+                    type="text"
+                    placeholder="Ton nom"
+                    value={contactName}
+                    onChange={e => setContactName(e.target.value)}
+                    required
+                    style={{ background: '#111', border: '1px solid #1e1e1e', color: '#fff', borderRadius: 10, padding: '12px 14px', fontSize: 13, transition: 'border-color 0.2s' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#333' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#1e1e1e' }}
+                  />
+                  <input
+                    type="email"
+                    placeholder="Ton email"
+                    value={contactEmail}
+                    onChange={e => setContactEmail(e.target.value)}
+                    required
+                    style={{ background: '#111', border: '1px solid #1e1e1e', color: '#fff', borderRadius: 10, padding: '12px 14px', fontSize: 13, transition: 'border-color 0.2s' }}
+                    onFocus={e => { e.currentTarget.style.borderColor = '#333' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = '#1e1e1e' }}
+                  />
+                </div>
+                <textarea
+                  placeholder="Ton message"
+                  value={contactMessage}
+                  onChange={e => setContactMessage(e.target.value)}
+                  required
+                  rows={5}
+                  style={{ background: '#111', border: '1px solid #1e1e1e', color: '#fff', borderRadius: 10, padding: '12px 14px', fontSize: 13, resize: 'vertical', fontFamily: 'inherit', transition: 'border-color 0.2s' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = '#333' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = '#1e1e1e' }}
+                />
+                {contactStatus === 'error' && (
+                  <p style={{ color: '#f87171', fontSize: 12 }}>Une erreur s'est produite. Réessaie ou écris-moi directement.</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={contactStatus === 'sending'}
+                  style={{ alignSelf: 'flex-start', background: '#FF4500', color: '#fff', border: 'none', borderRadius: 10, padding: '12px 24px', fontSize: 13, fontWeight: 600, cursor: contactStatus === 'sending' ? 'not-allowed' : 'pointer', opacity: contactStatus === 'sending' ? 0.6 : 1, transition: 'opacity 0.2s' }}
+                >
+                  {contactStatus === 'sending' ? 'Envoi...' : 'Envoyer →'}
+                </button>
+              </form>
+            )}
+          </FadeUp>
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
-      <footer style={{ padding: '36px 24px' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '16px 40px' }}>
-          <span style={{ fontWeight: 800, fontSize: 14, letterSpacing: '-0.01em' }}>JudgeMyApp</span>
-          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
-            <a href="/mentions-legales" style={{ color: '#222', fontSize: 12, transition: 'color 0.2s' }}
-              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#666')}
-              onMouseLeave={e => ((e.target as HTMLElement).style.color = '#222')}
-            >Mentions légales</a>
-            <a href="/cgv" style={{ color: '#222', fontSize: 12, transition: 'color 0.2s' }}
-              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#666')}
-              onMouseLeave={e => ((e.target as HTMLElement).style.color = '#222')}
-            >CGV</a>
-            <a href="mailto:floriandemange@icloud.com" style={{ color: '#222', fontSize: 12, transition: 'color 0.2s' }}
-              onMouseEnter={e => ((e.target as HTMLElement).style.color = '#666')}
-              onMouseLeave={e => ((e.target as HTMLElement).style.color = '#222')}
-            >Contact</a>
-          </div>
+      <footer style={{ padding: '28px 24px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '12px 32px' }}>
           <p style={{ color: '#1e1e1e', fontSize: 12 }}>© 2025 Florian Demange · France</p>
+          <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { label: 'Mentions légales', href: '/mentions-legales' },
+              { label: 'CGV', href: '/cgv' },
+              { label: 'contact@judgemyapp.fr', href: 'mailto:contact@judgemyapp.fr' },
+            ].map(({ label, href }) => (
+              <a
+                key={href}
+                href={href}
+                style={{ color: '#222', fontSize: 12, transition: 'color 0.2s' }}
+                onMouseEnter={e => ((e.target as HTMLElement).style.color = '#555')}
+                onMouseLeave={e => ((e.target as HTMLElement).style.color = '#222')}
+              >
+                {label}
+              </a>
+            ))}
+          </div>
         </div>
       </footer>
     </div>
